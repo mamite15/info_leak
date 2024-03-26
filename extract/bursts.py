@@ -8,7 +8,7 @@ def bursts(size):
     stopped = 0
 
     #バーストを調査
-    for x in range(0,size):
+    for x in range(0,len(size)):
         if size[x] > 0:
             stopped = 0
             curburst += x

@@ -69,8 +69,8 @@ def cumul_features(size):
 
     if separateClassifier:
         # cumulative in and out
-        posFeatures = np.interp(np.linspace(total[0], total[-1], 100 / 2), total, pos)
-        negFeatures = np.interp(np.linspace(total[0], total[-1], 100 / 2), total, neg)
+        posFeatures = np.interp(np.linspace(int(total[0]), int(total[-1]), 50), total, pos)
+        negFeatures = np.interp(np.linspace(int(total[0]), int(total[-1]), 50), total, neg)
         for el in itertools.islice(posFeatures, None):
             features.append(el)
         for el in itertools.islice(negFeatures, None):

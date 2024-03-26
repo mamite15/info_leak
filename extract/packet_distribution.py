@@ -1,17 +1,18 @@
 import numpy as np
 
-def pkt_dis(trace,features):
+def pkt_dis(size):
+    features=[]
     count = 0
     temp = []
     #パケットシーケンスを30パケットの重複しないチャンクに分割した時の最初の200チャンクの送信パケット数
-    for i in range(0, min(len(trace), 6000)):
-        if trace[i][1] > 0:
+    for i in range(0, min(len(size), 6000)):
+        if size[i] > 0:
             count += 1
         if i % 30 == 29:
             features.append(count)
             temp.append(count)
             count = 0
-    for i in range(len(trace) // 30, 200):
+    for i in range(len(size) // 30, 200):
         features.append(0)
         temp.append(0)
     #標準偏差

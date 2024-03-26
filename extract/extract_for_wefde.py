@@ -50,36 +50,55 @@ def change_trace_structure(pcap):
 
     #トレース格納配列T(c)={(t0,l0),(t1,l1),...,(tn,ln)}
     #trace=np.zeros((TRACE_LENGTH,2))
-    trace = [[0 for i in range(2)] for j in range(TRACE_LENGTH)]
-
-    for packet_number, packet in enumerate(pcap):
+    trace = [[0]*2 for j in range(TRACE_LENGTH)]
+    packet_number=0
+    for packet in pcap:
         hexdata=packet[1]
         if(hexdata.version == "4"):#ipv4ならこちら
             ip = ipaddress.IPv4Address(hexdata.src)
+            #print(ip.compressed)
+            #print(ip)
             #送信元が自分自身なら負(送信)
-            if(ip.compressed == "192.168.10.150" and packet_number < TRACE_LENGTH):
-                trace[packet_number][0]=packet.frame_info.time_epoch
-                trace[packet_number][1]=-packet.captured_length
+            if(ip.compressed == '192.168.10.150' and packet_number < TRACE_LENGTH):
+                #print("送信")
+                time=float(packet.frame_info.time_epoch)
+                trace[packet_number][0]=time
+                len=-int(packet.captured_length)
+                trace[packet_number][1]=len
+                packet_number +=1
 
             #送信元が自分自身でないなら正(受信)
-            elif(ip.compressed != "192.168.10.150" and packet_number < TRACE_LENGTH):
-                trace[packet_number][0]=packet.frame_info.time_epoch
-                trace[packet_number][1]=packet.captured_length
+            elif(ip.compressed != '192.168.10.150' and packet_number < TRACE_LENGTH):
+                #print("受信")
+                time=float(packet.frame_info.time_epoch)
+                trace[packet_number][0]=time
+                len=int(packet.captured_length)
+                trace[packet_number][1]=len
+
+                packet_number +=1
             else:
                 break
         else:#ipv6ならこちら
             ip = ipaddress.IPv6Address(hexdata.src)
+            #print(ip.compressed)
             #送信元が自分自身なら負(送信)
-            if(ip.compressed == "fe80::cee1:d5ff:fe0d:3d69" and packet_number < TRACE_LENGTH):
-                trace[packet_number][0]=packet.frame_info.time_epoch
-                trace[packet_number][1]=-packet.captured_length
+            if(ip.compressed == 'fe80::cee1:d5ff:fe0d:3d69' and packet_number < TRACE_LENGTH):
+                time=float(packet.frame_info.time_epoch)
+                trace[packet_number][0]=time
+                len=-int(packet.captured_length)
+                trace[packet_number][1]=len
+                packet_number +=1
             #送信元が自分自身でないなら正(受信)
-            elif(ip.compressed != "fe80::cee1:d5ff:fe0d:3d69" and packet_number < TRACE_LENGTH):
-                trace[packet_number][0]=packet.frame_info.time_epoch
-                trace[packet_number][1]=packet.captured_length
+            elif(ip.compressed != 'fe80::cee1:d5ff:fe0d:3d69' and packet_number < TRACE_LENGTH):
+                time=float(packet.frame_info.time_epoch)
+                trace[packet_number][0]=time
+                len=int(packet.captured_length)
+                trace[packet_number][1]=len
+                packet_number +=1
             else:#パケット数が5000を超えたら終了
                 break
-
+    #print(packet_number)
+    #print(trace)
     return trace
 
 #特徴抽出　f={web1,f1,f2,f3,...,fn}
@@ -98,7 +117,7 @@ def create_features(time,size):
     #Interval 抽出
     features.extend(interval.interval_extract(size))
     #Packet Distribution 抽出
-    features.extend(packet_distribution.pkt_dis(time,size))
+    features.extend(packet_distribution.pkt_dis(size))
     #Bursts 抽出
     features.extend(bursts.bursts(size))
     #First 20 Packets,First 30 Packets,Last 30 Packets 抽出
@@ -112,7 +131,7 @@ def create_features(time,size):
 
 def pkl(features):
     #ファイル名指定
-    features_file = "/r-tao/my_fingerprinting/deeplearning/fearures_pickle/features.pkl"
+    features_file = "/r-tao/info_leak/extrat/fearures_pickle/features.pkl"
 
     #特徴量データをバイナリファイルに書き込み
     with open(features_file,"wb") as xr:
@@ -129,12 +148,14 @@ def main():
     #features[特徴名][webサイト番号][特徴量サンプル]作成
     features = [[[0 for i in range(FEATURES_INSTANCE)] for j in range(WEBSITE_NUMBER)] for k in range(FEATURE_NUMBER)]
     
+    print("start\n")
     #読み取るpcapファイル指定
     dir_path="pcap/"
     file_list=glob.glob(os.path.join(dir_path,"*.pcap"))
 
+    print("抽出開始\n")
     #抽出開始   
-    for pcap_file in enumerate(file_list):
+    for pcap_file in file_list:
 
         cap=pyshark.FileCapture(pcap_file,display_filter="tcp.port == 443")
         print(str(cap) + "の解析")
@@ -145,12 +166,20 @@ def main():
         #トレースの構造を変更T(c)={(t0,l0),(t1,l1),...,(tn,ln)}
         trace=change_trace_structure(cap)
 
+        cap.close()
+
         #タイムスタンプと符号付きサイズ定義
         time=[]
         size=[]
-        for i in range(len(trace)):
-            time[i]=trace[i][0]
-            size[i]=trace[i][1]
+        #print(len(trace))
+        #print(trace[100][0])
+        for i in range(0,len(trace)):
+            #print("\n")
+            time.append(trace[i][0])
+            size.append(trace[i][1])
+            #print("要素数"+i)
+
+        #print(time)
         
         #トレースから出力した特徴の配列f={web1,f1,f2,f3,...,fn}
         #features=np.zeros(FEATURE_NUMBER+1)
@@ -158,9 +187,11 @@ def main():
         
         #f={web1,f1,f2,f3,...,fn}の生成
         #1つ目の要素はwebサイト番号
+        print("ドメインインデックス"+str(domain_index))
         f.append(domain_index)
         f.extend(create_features(time,size))
 
+        print(f)
         #packet count 追加
         for i in range(0,13):
             #features[f[0]][i][count] = f[i+1]
@@ -220,7 +251,10 @@ def main():
 
         count+=1
 
-        cap.close()
 
     #作成したfeaturesをバイナリファイルに書き込み
     pkl(features)
+
+    print("done.")
+
+main()
