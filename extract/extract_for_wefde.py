@@ -18,10 +18,10 @@ import packet_count_per_sec
 import cumul
 
 #ウェブサイト数
-WEBSITE_NUMBER=100
+WEBSITE_NUMBER=20
 #特徴の数
 FEATURE_NUMBER=3043
-#特徴量のインスタンス数
+#特徴量のインスタンス数 
 FEATURES_INSTANCE=1000
 #トレースの長さ
 TRACE_LENGTH=5000
@@ -52,6 +52,7 @@ def change_trace_structure(pcap):
     #trace=np.zeros((TRACE_LENGTH,2))
     trace = [[0]*2 for j in range(TRACE_LENGTH)]
     packet_number=0
+
     for packet in pcap:
         hexdata=packet[1]
         if(hexdata.version == "4"):#ipv4ならこちら
@@ -99,7 +100,11 @@ def change_trace_structure(pcap):
                 break
     #print(packet_number)
     #print(trace)
-    return trace
+    if(packet_number > 50):
+        return trace
+    else:
+        message="error"
+        return message
 
 #特徴抽出　f={web1,f1,f2,f3,...,fn}
 def create_features(time,size):
@@ -147,6 +152,8 @@ def main():
     
     #features[特徴名][webサイト番号][特徴量サンプル]作成
     features = [[[0 for i in range(FEATURES_INSTANCE)] for j in range(WEBSITE_NUMBER)] for k in range(FEATURE_NUMBER)]
+    #webサイトごとのインスタンス数カウント
+    count = [0] * WEBSITE_NUMBER
     
     print("start\n")
     #読み取るpcapファイル指定
@@ -159,6 +166,10 @@ def main():
 
         cap=pyshark.FileCapture(pcap_file,display_filter="tcp.port == 443")
         print(str(cap) + "の解析")
+        #壊れたpcapなら無視
+        #if(len(cap) < 50):
+        #    continue
+
         #ドメイン名取り出してラベルにする
         sp=re.split("[/_]",str(cap))
         domain_index = label(sp[1])
@@ -167,6 +178,9 @@ def main():
         trace=change_trace_structure(cap)
 
         cap.close()
+        #こわれたpcapなら抽出しない
+        if(not isinstance(trace,list)):
+            continue
 
         #タイムスタンプと符号付きサイズ定義
         time=[]
@@ -190,66 +204,68 @@ def main():
         print("ドメインインデックス"+str(domain_index))
         f.append(domain_index)
         f.extend(create_features(time,size))
-
+    
         print(f)
+
         #packet count 追加
         for i in range(0,13):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #time statistics 追加
         for i in range(13,37):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #ngram 追加
         for i in range(37,161):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #transposition 追加
         for i in range(161,765):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #intervalI 追加
         for i in range(765,1365):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #intervalII 追加
         for i in range(1365,1967):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #intervalIII 追加
         for i in range(1967,2553):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #packet distribution 追加
         for i in range(2553,2778):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #bursts 追加
         for i in range(2778,2789):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #first 20 packets 追加
         for i in range(2789,2809):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #first 30 packets 追加
         for i in range(2809,2811):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #last 30 packets 追加
         for i in range(2811,2813):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #packet count per second 追加
         for i in range(2813,2939):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
         #cumul 追加
         for i in range(2939,3043):
             #features[f[0]][i][count] = f[i+1]
-            features[i][f[0]][count] = f[i+1]
+            features[i][f[0]][count[f[0]]] = f[i+1]
 
-        count+=1
+        count[f[0]] += 1
+        print(count)
 
 
     #作成したfeaturesをバイナリファイルに書き込み
