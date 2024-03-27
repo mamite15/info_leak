@@ -10,16 +10,12 @@ def gaussian_kernel(x):
     return 1/np.sqrt(2*np.pi)*np.exp(-(x**2)/2)
 
 def wmean(x, w):
-    '''
-    Weighted mean
-    '''
+
     return sum(x * w) / float(sum(w))
 
 
 def wvar(x, w):
-    '''
-    Weighted variance
-    '''
+
     return sum(w * (x - wmean(x, w)) ** 2) / float(sum(w) - 1)
 
 def dnorm(x):
@@ -27,15 +23,7 @@ def dnorm(x):
 
 #plug-in推定によるバンド幅選択
 def sj(x, h):
-    '''
-    Equation 12 of Sheather and Jones [1]_
-
-    References
-    ----------
-    .. [1] A reliable data-based bandwidth selection method for kernel
-        density estimation. Simon J. Sheather and Michael C. Jones.
-        Journal of the Royal Statistical Society, Series B. 1991
-    '''
+    
     phi6 = lambda x: (x ** 6 - 15 * x ** 4 + 45 * x ** 2 - 15) * dnorm(x)
     phi4 = lambda x: (x ** 4 - 6 * x ** 2 + 3) * dnorm(x)
 
@@ -68,17 +56,6 @@ def sj(x, h):
             (n * abs(sdalpha2[0, 0]))) ** 0.2 - h
 
 def hnorm(x, weights=None):
-    '''
-    Bandwidth estimate assuming f is normal. See paragraph 2.4.2 of
-    Bowman and Azzalini[1]_ for details.
-
-    References
-    ----------
-    .. [1] Applied Smoothing Techniques for Data Analysis: the
-        Kernel Approach with S-Plus Illustrations.
-        Bowman, A.W. and Azzalini, A. (1997).
-        Oxford University Press, Oxford
-    '''
 
     x = np.asarray(x)
 
@@ -91,23 +68,12 @@ def hnorm(x, weights=None):
         sd = np.sqrt(wvar(x, weights))
         return sd * (4 / (3 * n)) ** (1 / 5.0)
 
-    # TODO: make this work for more dimensions
-    # ((4 / (p + 2) * n)^(1 / (p+4)) * sigma_i
     if len(x.shape) == 2:
         ndim = x.shape[1]
         sd = np.sqrt(np.apply_along_axis(wvar, 1, x, weights))
         return (4.0 / ((ndim + 2.0) * n) ** (1.0 / (ndim + 4.0))) * sd
     
 def plug_in(x, weights=None):
-    '''
-    Sheather-Jones bandwidth estimator [1]_.
-
-    References
-    ----------
-    .. [1] A reliable data-based bandwidth selection method for kernel
-        density estimation. Simon J. Sheather and Michael C. Jones.
-        Journal of the Royal Statistical Society, Series B. 1991
-    '''
 
     h0 = hnorm(x)
     v0 = sj(x, h0)
@@ -183,7 +149,7 @@ def akde_cal(feature,web_num):
     size = len(feature)
 
     #モンテカルロ用サンプル取得 (k/webサイト数)個 今回k=5000
-    sample_list = random.sample(feature,5000/web_num)
+    sample_list = random.sample(feature,int(5000/web_num))
 
     #サンプルの確率密度のリスト
     pdf_list = []
@@ -192,8 +158,7 @@ def akde_cal(feature,web_num):
     band_width = select_bw(feature)
     
     #サンプルごとに確率密度計算
-    for i in range(len(sample_list)):
-        sample = sample_list[i]
+    for sample in sample_list:
         #確率密度計算用変数 シグマの中のやつ
         x=[]
         

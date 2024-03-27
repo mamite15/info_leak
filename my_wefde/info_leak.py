@@ -15,7 +15,7 @@ def cal_hwf(pdf_list):
     size = len(pdf_list)
 
     hwfi = []
-    for i in range(len(pdf_list)):
-        hwfi.append(pdf_list[i]*math.log2(pdf_list[i]))
+    for pdf in pdf_list:
+        hwfi.append(pdf*math.log2(pdf))
 
     return sum(hwfi)/size

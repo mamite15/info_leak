@@ -12,9 +12,9 @@ FEATURES_INSTANCE=1000
 
 def input_pkl():
     #ファイル名指定
-    features_file = "//features.pkl"
+    features_file = "/home/info_leak/extract/features_pickle/features.pkl"
 
-    #特徴量データをバイナリファイルに書き込み
+    #特徴量データ配列をバイナリファイルに書き込み
     with open(features_file,"br") as xr:
         features = pickle.load(xr)
 
@@ -22,7 +22,7 @@ def input_pkl():
 
 def output_pkl(features):
     #ファイル名指定
-    features_file = "//leakage.pkl"
+    features_file = "/home/info_leak/extract/features_pickle/leakage.pkl"
 
     #特徴量データをバイナリファイルに書き込み
     with open(features_file,"wb") as xr:
@@ -41,13 +41,13 @@ def main():
 
 
     #各特徴について
-    for i in range(FEATURE_NUMBER):
+    for i in range(0,FEATURE_NUMBER):
 
         #H(W|F)  ←H(W|F) = 1/k ΣH(W|F(l))
         h_wf = 0
         
         #各webサイトについて
-        for j in range(WEBSITE_NUMBER):
+        for j in range(0,WEBSITE_NUMBER):
 
             #ある特徴について考える(昇順にしておく)
             feature_kind = sorted(features[i][j])
@@ -129,3 +129,5 @@ def main():
     for i in range(2939,2949):
         print("cumul:" + leakage[i])
     print("...")
+
+main()
